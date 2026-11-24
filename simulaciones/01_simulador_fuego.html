@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Encendido de Fuego - Curso Supervivencia</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #eee;
+            padding: 20px;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #ff6b35;
+            margin-bottom: 10px;
+            font-size: 1.8em;
+        }
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+        .scenario-box {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .scenario-title {
+            color: #ff6b35;
+            font-size: 1.2em;
+            margin-bottom: 15px;
+        }
+        .conditions {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .condition {
+            background: rgba(0,0,0,0.3);
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .condition-label {
+            font-size: 0.85em;
+            color: #888;
+            margin-bottom: 5px;
+        }
+        .condition-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        .options {
+            display: grid;
+            gap: 10px;
+        }
+        .option-btn {
+            background: rgba(255,107,53,0.2);
+            border: 2px solid #ff6b35;
+            color: #fff;
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-size: 1em;
+        }
+        .option-btn:hover {
+            background: rgba(255,107,53,0.4);
+            transform: translateX(5px);
+        }
+        .option-btn.correct {
+            background: rgba(76,175,80,0.4);
+            border-color: #4caf50;
+        }
+        .option-btn.incorrect {
+            background: rgba(244,67,54,0.4);
+            border-color: #f44336;
+        }
+        .option-btn:disabled {
+            cursor: not-allowed;
+            opacity: 0.7;
+        }
+        .feedback {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 10px;
+            display: none;
+        }
+        .feedback.show { display: block; }
+        .feedback.success {
+            background: rgba(76,175,80,0.2);
+            border: 1px solid #4caf50;
+        }
+        .feedback.error {
+            background: rgba(244,67,54,0.2);
+            border: 1px solid #f44336;
+        }
+        .feedback h3 {
+            margin-bottom: 10px;
+        }
+        .next-btn {
+            background: #ff6b35;
+            border: none;
+            color: #fff;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 15px;
+            display: none;
+        }
+        .next-btn.show { display: inline-block; }
+        .next-btn:hover {
+            background: #e55a2b;
+        }
+        .score-box {
+            background: rgba(255,107,53,0.2);
+            border-radius: 10px;
+            padding: 15px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .score { font-size: 2em; color: #ff6b35; }
+        .fire-animation {
+            font-size: 3em;
+            text-align: center;
+            animation: flicker 0.5s infinite alternate;
+        }
+        @keyframes flicker {
+            0% { opacity: 1; transform: scale(1); }
+            100% { opacity: 0.8; transform: scale(1.05); }
+        }
+        .complete-box {
+            text-align: center;
+            padding: 40px;
+        }
+        .complete-box h2 {
+            color: #4caf50;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simulador de Encendido de Fuego</h1>
+        <p class="subtitle">Elige el metodo correcto segun las condiciones</p>
+
+        <div class="score-box">
+            <div>Puntuacion: <span class="score" id="score">0</span> / <span id="total">5</span></div>
+        </div>
+
+        <div id="scenario-container"></div>
+    </div>
+
+    <script>
+        const scenarios = [
+            {
+                title: "Escenario 1: Bosque Templado Humedo",
+                conditions: [
+                    { label: "Clima", value: "Lluvioso" },
+                    { label: "Humedad", value: "85%" },
+                    { label: "Materiales", value: "Madera humeda" },
+                    { label: "Equipo", value: "Ferrocerio, yesca" }
+                ],
+                options: [
+                    { text: "Arco de fuego con madera del suelo", correct: false },
+                    { text: "Ferrocerio + yesca preparada (algodon+vaselina)", correct: true },
+                    { text: "Friccion mano (hand drill)", correct: false },
+                    { text: "Esperar a que seque la madera", correct: false }
+                ],
+                explanation: "Con alta humedad, los metodos de friccion fallan. El ferrocerio funciona mojado y la yesca preparada (algodon con vaselina) enciende incluso humeda. Siempre lleva yesca impermeable en tu kit."
+            },
+            {
+                title: "Escenario 2: Desierto Calido",
+                conditions: [
+                    { label: "Clima", value: "Soleado, 40C" },
+                    { label: "Humedad", value: "15%" },
+                    { label: "Materiales", value: "Yuca seca, arbustos" },
+                    { label: "Equipo", value: "Cuchillo, nada mas" }
+                ],
+                options: [
+                    { text: "Hand drill con tallo de yuca", correct: true },
+                    { text: "Esperar a la noche para conservar energia", correct: false },
+                    { text: "Usar el cuchillo como pedernal", correct: false },
+                    { text: "Concentrar luz solar con el cuchillo", correct: false }
+                ],
+                explanation: "En ambiente seco y calido, el hand drill funciona excelentemente. La yuca seca es ideal para tablilla y huso. La baja humedad permite ignicion rapida por friccion."
+            },
+            {
+                title: "Escenario 3: Montana Nevada",
+                conditions: [
+                    { label: "Clima", value: "Nevando, -5C" },
+                    { label: "Humedad", value: "70%" },
+                    { label: "Materiales", value: "Pinos, corteza abedul" },
+                    { label: "Equipo", value: "Encendedor BIC" }
+                ],
+                options: [
+                    { text: "Encendedor + corteza de abedul", correct: true },
+                    { text: "Arco de fuego con ramas de pino", correct: false },
+                    { text: "Esperar a que pare de nevar", correct: false },
+                    { text: "Usar agujas de pino como yesca", correct: false }
+                ],
+                explanation: "El encendedor BIC funciona hasta -15C. La corteza de abedul contiene aceites que arden incluso humeda. Es la combinacion ideal para condiciones frias y humedas."
+            },
+            {
+                title: "Escenario 4: Playa Tropical",
+                conditions: [
+                    { label: "Clima", value: "Soleado, brisa" },
+                    { label: "Humedad", value: "75%" },
+                    { label: "Materiales", value: "Cocos, palmeras" },
+                    { label: "Equipo", value: "Gafas/lente, cuchillo" }
+                ],
+                options: [
+                    { text: "Lente + fibra de coco como yesca", correct: true },
+                    { text: "Friccion con madera de palmera", correct: false },
+                    { text: "Golpear piedras de la playa", correct: false },
+                    { text: "Frotar cocos entre si", correct: false }
+                ],
+                explanation: "Con sol intenso, un lente puede concentrar luz para ignicion. La fibra de coco seca (coir) es excelente yesca. El metodo de lente requiere sol directo pero es muy efectivo en tropico."
+            },
+            {
+                title: "Escenario 5: Cueva/Refugio Nocturno",
+                conditions: [
+                    { label: "Clima", value: "Noche, frio" },
+                    { label: "Humedad", value: "50%" },
+                    { label: "Materiales", value: "Ramas secas guardadas" },
+                    { label: "Equipo", value: "Pedernal y eslabon" }
+                ],
+                options: [
+                    { text: "Usar metodo solar", correct: false },
+                    { text: "Pedernal + eslabon + nido de yesca", correct: true },
+                    { text: "Friccion en la oscuridad", correct: false },
+                    { text: "Esperar al amanecer", correct: false }
+                ],
+                explanation: "De noche, el pedernal y eslabon es ideal: genera chispas visibles, funciona en cualquier condicion, y con un buen nido de yesca seca garantiza fuego. Por eso es equipo esencial."
+            }
+        ];
+
+        let currentScenario = 0;
+        let score = 0;
+
+        function renderScenario() {
+            const container = document.getElementById('scenario-container');
+
+            if (currentScenario >= scenarios.length) {
+                const percentage = Math.round((score / scenarios.length) * 100);
+                let message = "";
+                if (percentage === 100) message = "Maestro del Fuego! Supervivencia garantizada.";
+                else if (percentage >= 80) message = "Excelente! Tienes buen criterio de supervivencia.";
+                else if (percentage >= 60) message = "Bien, pero repasa los metodos de encendido.";
+                else message = "Necesitas practicar mas. Revisa el Modulo 1.1";
+
+                container.innerHTML = `
+                    <div class="complete-box">
+                        <div class="fire-animation">🔥🏕️🔥</div>
+                        <h2>Simulacion Completada!</h2>
+                        <p>Puntuacion final: ${score}/${scenarios.length} (${percentage}%)</p>
+                        <p style="margin-top: 15px; color: #aaa;">${message}</p>
+                        <button class="next-btn show" onclick="restart()">Reiniciar Simulacion</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const s = scenarios[currentScenario];
+            container.innerHTML = `
+                <div class="scenario-box">
+                    <div class="scenario-title">${s.title}</div>
+                    <div class="conditions">
+                        ${s.conditions.map(c => `
+                            <div class="condition">
+                                <div class="condition-label">${c.label}</div>
+                                <div class="condition-value">${c.value}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                    <p style="margin-bottom: 15px; color: #ccc;">Cual es el mejor metodo para encender fuego?</p>
+                    <div class="options">
+                        ${s.options.map((opt, i) => `
+                            <button class="option-btn" onclick="selectOption(${i})">${opt.text}</button>
+                        `).join('')}
+                    </div>
+                    <div class="feedback" id="feedback"></div>
+                    <button class="next-btn" id="nextBtn" onclick="nextScenario()">Siguiente Escenario →</button>
+                </div>
+            `;
+        }
+
+        function selectOption(index) {
+            const s = scenarios[currentScenario];
+            const buttons = document.querySelectorAll('.option-btn');
+            const feedback = document.getElementById('feedback');
+            const nextBtn = document.getElementById('nextBtn');
+
+            buttons.forEach((btn, i) => {
+                btn.disabled = true;
+                if (s.options[i].correct) {
+                    btn.classList.add('correct');
+                } else if (i === index) {
+                    btn.classList.add('incorrect');
+                }
+            });
+
+            const isCorrect = s.options[index].correct;
+            if (isCorrect) {
+                score++;
+                document.getElementById('score').textContent = score;
+            }
+
+            feedback.className = `feedback show ${isCorrect ? 'success' : 'error'}`;
+            feedback.innerHTML = `
+                <h3>${isCorrect ? '✓ Correcto!' : '✗ Incorrecto'}</h3>
+                <p>${s.explanation}</p>
+            `;
+            nextBtn.classList.add('show');
+        }
+
+        function nextScenario() {
+            currentScenario++;
+            renderScenario();
+        }
+
+        function restart() {
+            currentScenario = 0;
+            score = 0;
+            document.getElementById('score').textContent = score;
+            renderScenario();
+        }
+
+        renderScenario();
+    </script>
+</body>
+</html>

@@ -1,0 +1,564 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Simulador de Navegacion - Curso Supervivencia</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            min-height: 100vh;
+            color: #eee;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+        .nav-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 800px) {
+            .nav-grid { grid-template-columns: 1fr; }
+        }
+        .panel {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+        }
+        .panel-title {
+            color: #ffd700;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .compass-container {
+            position: relative;
+            width: 280px;
+            height: 280px;
+            margin: 0 auto 20px;
+        }
+        .compass {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(145deg, #2c3e50, #34495e);
+            border: 4px solid #ffd700;
+            position: relative;
+            box-shadow: 0 0 30px rgba(255,215,0,0.3);
+        }
+        .compass-marks {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        .compass-mark {
+            position: absolute;
+            left: 50%;
+            top: 5px;
+            width: 2px;
+            height: 15px;
+            background: #ffd700;
+            transform-origin: 0 135px;
+        }
+        .compass-mark.major {
+            height: 20px;
+            width: 3px;
+        }
+        .cardinal {
+            position: absolute;
+            font-weight: bold;
+            font-size: 1.2em;
+            color: #ffd700;
+        }
+        .cardinal.n { top: 30px; left: 50%; transform: translateX(-50%); color: #ff6b6b; }
+        .cardinal.s { bottom: 30px; left: 50%; transform: translateX(-50%); }
+        .cardinal.e { right: 30px; top: 50%; transform: translateY(-50%); }
+        .cardinal.w { left: 30px; top: 50%; transform: translateY(-50%); }
+        .needle {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: 4px;
+            height: 100px;
+            margin-left: -2px;
+            margin-top: -80px;
+            transform-origin: 2px 80px;
+            transition: transform 0.5s ease;
+        }
+        .needle-north {
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-bottom: 80px solid #ff6b6b;
+            position: absolute;
+            left: -6px;
+            top: 0;
+        }
+        .needle-south {
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 60px solid #eee;
+            position: absolute;
+            left: -4px;
+            top: 80px;
+        }
+        .needle-center {
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            background: #ffd700;
+            border-radius: 50%;
+            left: -6px;
+            top: 72px;
+        }
+        .bearing-display {
+            text-align: center;
+            font-size: 2em;
+            color: #ffd700;
+            margin-top: 15px;
+        }
+        .degree-symbol { font-size: 0.7em; }
+        .controls {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-top: 20px;
+        }
+        .control-btn {
+            background: rgba(255,215,0,0.2);
+            border: 2px solid #ffd700;
+            color: #fff;
+            padding: 12px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s;
+        }
+        .control-btn:hover {
+            background: rgba(255,215,0,0.4);
+        }
+        .scenario-box {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .scenario-title {
+            color: #ffd700;
+            margin-bottom: 10px;
+        }
+        .quiz-options {
+            display: grid;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .quiz-btn {
+            background: rgba(255,255,255,0.1);
+            border: 2px solid rgba(255,255,255,0.3);
+            color: #fff;
+            padding: 12px 15px;
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: left;
+            transition: all 0.3s;
+        }
+        .quiz-btn:hover {
+            border-color: #ffd700;
+            background: rgba(255,215,0,0.1);
+        }
+        .quiz-btn.correct {
+            border-color: #4caf50;
+            background: rgba(76,175,80,0.3);
+        }
+        .quiz-btn.incorrect {
+            border-color: #f44336;
+            background: rgba(244,67,54,0.3);
+        }
+        .feedback-box {
+            margin-top: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            display: none;
+        }
+        .feedback-box.show { display: block; }
+        .feedback-box.success { background: rgba(76,175,80,0.2); border: 1px solid #4caf50; }
+        .feedback-box.error { background: rgba(244,67,54,0.2); border: 1px solid #f44336; }
+        .score-display {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .score {
+            font-size: 2em;
+            color: #ffd700;
+        }
+        .method-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .method-tab {
+            flex: 1;
+            background: rgba(0,0,0,0.3);
+            border: none;
+            color: #aaa;
+            padding: 12px;
+            border-radius: 8px 8px 0 0;
+            cursor: pointer;
+        }
+        .method-tab.active {
+            background: rgba(255,215,0,0.2);
+            color: #ffd700;
+        }
+        .method-content {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 0 0 10px 10px;
+        }
+        .star-map {
+            text-align: center;
+            font-family: monospace;
+            white-space: pre;
+            font-size: 0.75em;
+            line-height: 1.3;
+            color: #ffd700;
+            background: #0a0a1a;
+            padding: 15px;
+            border-radius: 10px;
+            margin: 15px 0;
+        }
+        .next-btn {
+            background: #ffd700;
+            border: none;
+            color: #1e3c72;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: bold;
+            margin-top: 15px;
+            display: none;
+        }
+        .next-btn.show { display: inline-block; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Simulador de Navegacion Terrestre</h1>
+        <p class="subtitle">Aprende a orientarte con y sin brujula</p>
+
+        <div class="nav-grid">
+            <div class="panel">
+                <h2 class="panel-title">Brujula Interactiva</h2>
+
+                <div class="compass-container">
+                    <div class="compass">
+                        <div class="compass-marks" id="compassMarks"></div>
+                        <span class="cardinal n">N</span>
+                        <span class="cardinal s">S</span>
+                        <span class="cardinal e">E</span>
+                        <span class="cardinal w">O</span>
+                        <div class="needle" id="needle">
+                            <div class="needle-north"></div>
+                            <div class="needle-south"></div>
+                            <div class="needle-center"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="bearing-display">
+                    <span id="bearingValue">0</span><span class="degree-symbol">°</span>
+                    <span id="bearingName">Norte</span>
+                </div>
+
+                <div class="controls">
+                    <button class="control-btn" onclick="setBearing(0)">N (0°)</button>
+                    <button class="control-btn" onclick="setBearing(45)">NE (45°)</button>
+                    <button class="control-btn" onclick="setBearing(90)">E (90°)</button>
+                    <button class="control-btn" onclick="setBearing(135)">SE (135°)</button>
+                    <button class="control-btn" onclick="setBearing(180)">S (180°)</button>
+                    <button class="control-btn" onclick="setBearing(225)">SO (225°)</button>
+                    <button class="control-btn" onclick="setBearing(270)">O (270°)</button>
+                    <button class="control-btn" onclick="setBearing(315)">NO (315°)</button>
+                    <button class="control-btn" onclick="setBearing(Math.floor(Math.random()*360))">Aleatorio</button>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2 class="panel-title">Metodos de Orientacion</h2>
+
+                <div class="method-tabs">
+                    <button class="method-tab active" onclick="showMethod('brujula')">Brujula</button>
+                    <button class="method-tab" onclick="showMethod('sol')">Sol</button>
+                    <button class="method-tab" onclick="showMethod('estrellas')">Estrellas</button>
+                </div>
+
+                <div class="method-content" id="methodContent">
+                    <!-- Content loaded dynamically -->
+                </div>
+            </div>
+        </div>
+
+        <div class="panel" style="margin-top: 20px;">
+            <h2 class="panel-title">Desafio de Navegacion</h2>
+
+            <div class="score-display">
+                Puntuacion: <span class="score" id="score">0</span> / <span id="totalQuestions">5</span>
+            </div>
+
+            <div id="quizContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // Create compass marks
+        const marksContainer = document.getElementById('compassMarks');
+        for (let i = 0; i < 72; i++) {
+            const mark = document.createElement('div');
+            mark.className = 'compass-mark' + (i % 9 === 0 ? ' major' : '');
+            mark.style.transform = `rotate(${i * 5}deg)`;
+            marksContainer.appendChild(mark);
+        }
+
+        let currentBearing = 0;
+
+        function setBearing(degrees) {
+            currentBearing = degrees;
+            document.getElementById('needle').style.transform = `rotate(${degrees}deg)`;
+            document.getElementById('bearingValue').textContent = degrees;
+
+            const names = {
+                0: 'Norte', 45: 'Noreste', 90: 'Este', 135: 'Sureste',
+                180: 'Sur', 225: 'Suroeste', 270: 'Oeste', 315: 'Noroeste'
+            };
+            let name = '';
+            for (let d in names) {
+                if (Math.abs(degrees - d) <= 22.5 || Math.abs(degrees - d - 360) <= 22.5) {
+                    name = names[d];
+                    break;
+                }
+            }
+            document.getElementById('bearingName').textContent = name || '';
+        }
+
+        const methods = {
+            brujula: `
+                <h3 style="color: #ffd700; margin-bottom: 15px;">Uso de la Brujula</h3>
+                <ol style="margin-left: 20px; line-height: 1.8;">
+                    <li>Sostener horizontal, lejos de metales</li>
+                    <li>Dejar que la aguja se estabilice</li>
+                    <li>Rojo/Norte siempre apunta al norte magnetico</li>
+                    <li>Girar TU CUERPO, no la brujula</li>
+                    <li>Alinear destino con rumbo deseado</li>
+                </ol>
+                <div style="background: rgba(255,215,0,0.1); padding: 15px; border-radius: 8px; margin-top: 15px;">
+                    <strong>Declinacion Magnetica:</strong><br>
+                    El norte magnetico NO es el norte geografico. La diferencia varia segun ubicacion (en Espana ~1-2° Oeste).
+                </div>
+            `,
+            sol: `
+                <h3 style="color: #ffd700; margin-bottom: 15px;">Metodo del Palo y Sombra</h3>
+                <div class="star-map">
+    MAÑANA        MEDIODIA        TARDE
+       ☀️              ☀️              ☀️
+        \\             |              /
+         \\            |             /
+    ───●───────●───────●───────●───────
+      (1)    (2)     (3)    (4)
+       O                           E
+       ←─────── LINEA E-O ─────────→
+                </div>
+                <ol style="margin-left: 20px; line-height: 1.8;">
+                    <li>Clava palo vertical en suelo llano</li>
+                    <li>Marca punta de sombra (1)</li>
+                    <li>Espera 15-30 minutos</li>
+                    <li>Marca nueva punta (2)</li>
+                    <li>Linea (1)→(2) = Oeste→Este</li>
+                    <li>Perpendicular = Norte-Sur</li>
+                </ol>
+            `,
+            estrellas: `
+                <h3 style="color: #ffd700; margin-bottom: 15px;">Navegacion Estelar</h3>
+                <div class="star-map">
+    HEMISFERIO NORTE - Osa Mayor → Polar
+
+            ★ POLAR (Norte)
+            |
+            |  ×5
+            |
+        ★───★ (Apuntadores)
+        |   |
+        ★   ★
+         \\ /
+          ★
+          |
+          ★
+       OSA MAYOR
+                </div>
+                <p style="margin-top: 15px;">
+                    <strong>Instrucciones:</strong><br>
+                    1. Localiza la Osa Mayor (Carro Grande)<br>
+                    2. Extiende 5× la distancia entre las dos estrellas delanteras<br>
+                    3. Encontraras la Estrella Polar = NORTE exacto
+                </p>
+                <div class="star-map">
+    HEMISFERIO SUR - Cruz del Sur
+
+              ★
+             /|\\
+            / | \\
+           ★──★──★
+              |
+              | ×4.5
+              ↓
+           SUR
+                </div>
+            `
+        };
+
+        function showMethod(method) {
+            document.querySelectorAll('.method-tab').forEach(t => t.classList.remove('active'));
+            event.currentTarget.classList.add('active');
+            document.getElementById('methodContent').innerHTML = methods[method];
+        }
+
+        // Quiz system
+        const quizzes = [
+            {
+                question: "Estas perdido. Tu brujula marca que tu destino esta a 270°. ¿Hacia donde caminas?",
+                options: ["Norte", "Este", "Oeste", "Sur"],
+                correct: 2,
+                explanation: "270° es Oeste. Los grados van: 0°=N, 90°=E, 180°=S, 270°=O."
+            },
+            {
+                question: "Es mediodia solar. La sombra de un palo apunta hacia ti. ¿Donde estas parado?",
+                options: ["Norte del palo", "Sur del palo", "Este del palo", "Oeste del palo"],
+                correct: 0,
+                explanation: "Al mediodia el sol esta al sur (hemisferio norte), las sombras apuntan al norte. Si la sombra apunta hacia ti, estas al norte del palo."
+            },
+            {
+                question: "Localizas la Estrella Polar. ¿Hacia donde miras?",
+                options: ["Sur", "Este", "Norte", "Oeste"],
+                correct: 2,
+                explanation: "La Estrella Polar (Polaris) siempre indica el Norte geografico en el hemisferio norte."
+            },
+            {
+                question: "Tu brujula gira erráticamente cerca de unas rocas. ¿Que ocurre?",
+                options: [
+                    "La brujula esta rota",
+                    "Hay minerales magneticos en las rocas",
+                    "Estas en el Polo Norte",
+                    "La bateria esta baja"
+                ],
+                correct: 1,
+                explanation: "Rocas con magnetita u otros minerales magneticos interfieren con la brujula. Alejate para obtener lectura correcta."
+            },
+            {
+                question: "Marcas la sombra de un palo, esperas 20 min, marcas otra vez. La linea va de punto 1 a punto 2. ¿Cual es Oeste?",
+                options: ["Punto 1", "Punto 2", "El palo", "Ningun de los dos"],
+                correct: 0,
+                explanation: "El primer punto (sombra mas temprana) siempre marca el Oeste, porque el sol se mueve de Este a Oeste."
+            }
+        ];
+
+        let currentQuiz = 0;
+        let quizScore = 0;
+
+        function renderQuiz() {
+            const container = document.getElementById('quizContainer');
+
+            if (currentQuiz >= quizzes.length) {
+                const pct = Math.round((quizScore / quizzes.length) * 100);
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 30px;">
+                        <div style="font-size: 4em;">🧭</div>
+                        <h3 style="color: #ffd700; margin: 20px 0;">Desafio Completado!</h3>
+                        <p>Puntuacion: ${quizScore}/${quizzes.length} (${pct}%)</p>
+                        <p style="color: #aaa; margin-top: 10px;">
+                            ${pct === 100 ? 'Navegante experto!' :
+                              pct >= 80 ? 'Excelente orientacion!' :
+                              pct >= 60 ? 'Buen sentido de direccion.' : 'Repasa los metodos de navegacion.'}
+                        </p>
+                        <button class="next-btn show" onclick="restartQuiz()">Reiniciar Desafio</button>
+                    </div>
+                `;
+                return;
+            }
+
+            const q = quizzes[currentQuiz];
+            container.innerHTML = `
+                <div class="scenario-box">
+                    <div class="scenario-title">Pregunta ${currentQuiz + 1} de ${quizzes.length}</div>
+                    <p>${q.question}</p>
+                    <div class="quiz-options">
+                        ${q.options.map((opt, i) => `
+                            <button class="quiz-btn" onclick="answerQuiz(${i})">${opt}</button>
+                        `).join('')}
+                    </div>
+                    <div class="feedback-box" id="feedback"></div>
+                    <button class="next-btn" id="nextBtn" onclick="nextQuiz()">Siguiente →</button>
+                </div>
+            `;
+        }
+
+        function answerQuiz(index) {
+            const q = quizzes[currentQuiz];
+            const buttons = document.querySelectorAll('.quiz-btn');
+            const feedback = document.getElementById('feedback');
+            const nextBtn = document.getElementById('nextBtn');
+
+            buttons.forEach((btn, i) => {
+                btn.disabled = true;
+                if (i === q.correct) btn.classList.add('correct');
+                else if (i === index) btn.classList.add('incorrect');
+            });
+
+            const isCorrect = index === q.correct;
+            if (isCorrect) {
+                quizScore++;
+                document.getElementById('score').textContent = quizScore;
+            }
+
+            feedback.className = `feedback-box show ${isCorrect ? 'success' : 'error'}`;
+            feedback.innerHTML = `
+                <strong>${isCorrect ? '✓ Correcto!' : '✗ Incorrecto'}</strong><br>
+                ${q.explanation}
+            `;
+            nextBtn.classList.add('show');
+        }
+
+        function nextQuiz() {
+            currentQuiz++;
+            renderQuiz();
+        }
+
+        function restartQuiz() {
+            currentQuiz = 0;
+            quizScore = 0;
+            document.getElementById('score').textContent = 0;
+            renderQuiz();
+        }
+
+        // Initialize
+        showMethod('brujula');
+        renderQuiz();
+    </script>
+</body>
+</html>

@@ -1,0 +1,552 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Selector de Refugio - Curso Supervivencia</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #2d3436 0%, #636e72 100%);
+            min-height: 100vh;
+            color: #eee;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #81ecec;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+        .selector-panel {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+            margin-bottom: 20px;
+        }
+        .panel-title {
+            color: #81ecec;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+        }
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+        }
+        .option-card {
+            background: rgba(0,0,0,0.3);
+            border: 2px solid transparent;
+            border-radius: 10px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        .option-card:hover {
+            border-color: #81ecec;
+            transform: translateY(-3px);
+        }
+        .option-card.selected {
+            border-color: #81ecec;
+            background: rgba(129,236,236,0.2);
+        }
+        .option-icon {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+        .option-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .option-desc {
+            font-size: 0.85em;
+            color: #aaa;
+        }
+        .result-panel {
+            background: rgba(129,236,236,0.1);
+            border: 2px solid #81ecec;
+            border-radius: 15px;
+            padding: 25px;
+            display: none;
+        }
+        .result-panel.show { display: block; }
+        .shelter-result {
+            display: grid;
+            grid-template-columns: 1fr 2fr;
+            gap: 20px;
+        }
+        @media (max-width: 700px) {
+            .shelter-result { grid-template-columns: 1fr; }
+        }
+        .shelter-visual {
+            text-align: center;
+        }
+        .shelter-icon {
+            font-size: 5em;
+            margin-bottom: 15px;
+        }
+        .shelter-name {
+            font-size: 1.5em;
+            color: #81ecec;
+            margin-bottom: 10px;
+        }
+        .shelter-stats {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .stat {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        .stat-label {
+            font-size: 0.8em;
+            color: #888;
+        }
+        .stat-value {
+            font-size: 1.2em;
+            color: #81ecec;
+        }
+        .shelter-details h3 {
+            color: #81ecec;
+            margin-bottom: 15px;
+        }
+        .construction-steps {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .step {
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+            display: flex;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .step:last-child { border-bottom: none; }
+        .step-num {
+            background: #81ecec;
+            color: #2d3436;
+            width: 25px;
+            height: 25px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+        .materials-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 10px;
+            margin-top: 15px;
+        }
+        .material {
+            background: rgba(129,236,236,0.2);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+        .warning-box {
+            background: rgba(255,193,7,0.2);
+            border: 1px solid #ffc107;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+        }
+        .warning-box h4 {
+            color: #ffc107;
+            margin-bottom: 10px;
+        }
+        .reset-btn {
+            background: #81ecec;
+            border: none;
+            color: #2d3436;
+            padding: 12px 30px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1em;
+            margin-top: 20px;
+        }
+        .reset-btn:hover {
+            background: #63d9d9;
+        }
+        .ascii-art {
+            font-family: monospace;
+            white-space: pre;
+            font-size: 0.7em;
+            line-height: 1.2;
+            background: rgba(0,0,0,0.5);
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Selector de Refugio de Supervivencia</h1>
+        <p class="subtitle">Selecciona las condiciones para encontrar el refugio optimo</p>
+
+        <div class="selector-panel">
+            <h2 class="panel-title">1. Entorno</h2>
+            <div class="options-grid" id="entorno">
+                <div class="option-card" onclick="select('entorno', 'bosque')">
+                    <div class="option-icon">🌲</div>
+                    <div class="option-name">Bosque</div>
+                    <div class="option-desc">Arboles, ramas, hojarasca disponible</div>
+                </div>
+                <div class="option-card" onclick="select('entorno', 'montana')">
+                    <div class="option-icon">🏔️</div>
+                    <div class="option-name">Montana/Rocas</div>
+                    <div class="option-desc">Terreno rocoso, posibles cuevas</div>
+                </div>
+                <div class="option-card" onclick="select('entorno', 'nieve')">
+                    <div class="option-icon">❄️</div>
+                    <div class="option-name">Nieve</div>
+                    <div class="option-desc">Terreno nevado, frio extremo</div>
+                </div>
+                <div class="option-card" onclick="select('entorno', 'desierto')">
+                    <div class="option-icon">🏜️</div>
+                    <div class="option-name">Desierto/Arido</div>
+                    <div class="option-desc">Escasos materiales, calor extremo</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="selector-panel">
+            <h2 class="panel-title">2. Clima/Amenaza Principal</h2>
+            <div class="options-grid" id="clima">
+                <div class="option-card" onclick="select('clima', 'lluvia')">
+                    <div class="option-icon">🌧️</div>
+                    <div class="option-name">Lluvia</div>
+                    <div class="option-desc">Prioridad: Impermeabilidad</div>
+                </div>
+                <div class="option-card" onclick="select('clima', 'frio')">
+                    <div class="option-icon">🥶</div>
+                    <div class="option-name">Frio intenso</div>
+                    <div class="option-desc">Prioridad: Aislamiento termico</div>
+                </div>
+                <div class="option-card" onclick="select('clima', 'calor')">
+                    <div class="option-icon">🥵</div>
+                    <div class="option-name">Calor extremo</div>
+                    <div class="option-desc">Prioridad: Sombra, ventilacion</div>
+                </div>
+                <div class="option-card" onclick="select('clima', 'viento')">
+                    <div class="option-icon">💨</div>
+                    <div class="option-name">Viento fuerte</div>
+                    <div class="option-desc">Prioridad: Proteccion eolica</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="selector-panel">
+            <h2 class="panel-title">3. Tiempo Disponible</h2>
+            <div class="options-grid" id="tiempo">
+                <div class="option-card" onclick="select('tiempo', 'urgente')">
+                    <div class="option-icon">⚡</div>
+                    <div class="option-name">Emergencia</div>
+                    <div class="option-desc">Menos de 1 hora</div>
+                </div>
+                <div class="option-card" onclick="select('tiempo', 'normal')">
+                    <div class="option-icon">⏱️</div>
+                    <div class="option-name">Varias horas</div>
+                    <div class="option-desc">2-4 horas disponibles</div>
+                </div>
+                <div class="option-card" onclick="select('tiempo', 'planificado')">
+                    <div class="option-icon">📅</div>
+                    <div class="option-name">Dia completo</div>
+                    <div class="option-desc">Tiempo para construir bien</div>
+                </div>
+            </div>
+        </div>
+
+        <div class="result-panel" id="result"></div>
+    </div>
+
+    <script>
+        const selections = { entorno: null, clima: null, tiempo: null };
+
+        const shelters = {
+            "bosque-lluvia-urgente": {
+                name: "Lean-to Rapido",
+                icon: "🏕️",
+                tiempo: "30-60 min",
+                proteccion: "Media",
+                dificultad: "Facil",
+                duracion: "1 noche",
+                ascii: `
+       ___________
+      /::::::::::::\\
+     /:::::::::::::::\\
+    /::::::::::::::::/
+   ├─────────────────┤
+   │                 │
+  ─┴─               ─┴─
+        `,
+                pasos: [
+                    "Buscar arbol caido o rama horizontal entre dos arboles",
+                    "Apoyar ramas largas en angulo de 45° contra la estructura",
+                    "Cubrir con hojarasca, helechos o corteza de arriba a abajo",
+                    "Hacer capa gruesa (30+ cm) para impermeabilidad"
+                ],
+                materiales: ["Rama horizontal (2-3m)", "Ramas largas (15-20)", "Hojarasca abundante", "Corteza/helechos"],
+                warnings: ["Construir con la espalda al viento", "Angulo pronunciado para que escurra el agua", "Cama elevada del suelo"]
+            },
+            "bosque-lluvia-normal": {
+                name: "A-Frame (Estructura en A)",
+                icon: "⛺",
+                tiempo: "2-3 horas",
+                proteccion: "Alta",
+                dificultad: "Media",
+                duracion: "Varios dias",
+                ascii: `
+         /\\
+        /  \\
+       /    \\
+      /      \\
+     /:::::::::\\
+    /::::::::::::\\
+   ├──────────────┤
+   └──────────────┘
+        `,
+                pasos: [
+                    "Clavar rama de cumbrera entre dos arboles o soportes Y",
+                    "Apoyar ramas en ambos lados formando A",
+                    "Tejer ramas horizontales para estructura",
+                    "Cubrir con capas de hojarasca de abajo arriba",
+                    "Añadir capa final de corteza o ramas con hojas"
+                ],
+                materiales: ["Cumbrera (3m)", "Ramas laterales (30+)", "Cordaje o ramas flexibles", "Hojarasca (mucha)", "Corteza grande"],
+                warnings: ["Doble capa de aislamiento", "Entrada pequeña para retener calor", "Drenar agua alrededor"]
+            },
+            "bosque-frio-urgente": {
+                name: "Debris Hut (Refugio de Escombros)",
+                icon: "🛖",
+                tiempo: "1 hora",
+                proteccion: "Alta",
+                dificultad: "Media",
+                duracion: "1-3 noches",
+                ascii: `
+        ___
+       /   \\___
+      /:::::::::\\___
+     /::::::::::::::::\\
+    └─────────────────┘
+    [Entrada pequeña]
+        `,
+                pasos: [
+                    "Cumbrera apoyada en soporte, longitud = tu altura + brazo",
+                    "Costillas a ambos lados cada 15-20 cm",
+                    "Ramas finas perpendiculares (enrejado)",
+                    "Cubrir con 1 metro de hojarasca suelta",
+                    "Rellenar interior con hojarasca como aislante"
+                ],
+                materiales: ["Cumbrera larga", "Costillas (20+)", "Enrejado fino", "Hojarasca (muchisima)", "Entrada bloqueante"],
+                warnings: ["Cuanto mas pequeno, mas calido", "Hojarasca interior = saco de dormir", "Solo cabe una persona"]
+            },
+            "nieve-frio-normal": {
+                name: "Quinzhee (Refugio de Nieve)",
+                icon: "🏠",
+                tiempo: "3-4 horas",
+                proteccion: "Muy alta",
+                dificultad: "Alta",
+                duracion: "Semanas",
+                ascii: `
+         ____
+       /      \\
+      /   __   \\
+     |   |  |   |
+     |   |__|   |
+      \\________/
+        `,
+                pasos: [
+                    "Apilar nieve en domo (2m alto, 3m diametro)",
+                    "Clavar ramas de 30cm como guias de grosor",
+                    "Esperar 2 horas para que sinterice",
+                    "Excavar entrada baja (trampa de frio)",
+                    "Excavar interior hasta ver puntas de ramas",
+                    "Hacer agujero ventilacion arriba (puño)"
+                ],
+                materiales: ["Nieve (mucha)", "Pala/recipiente", "Ramas guia (20)", "Tiempo para sinterizar"],
+                warnings: ["VENTILACION OBLIGATORIA (CO2)", "Entrada mas baja que cama", "Interior a 0°C aunque fuera -30°C"]
+            },
+            "desierto-calor-urgente": {
+                name: "Refugio de Sombra",
+                icon: "☀️",
+                tiempo: "15-30 min",
+                proteccion: "Media",
+                dificultad: "Facil",
+                duracion: "Dia",
+                ascii: `
+    ==================
+    ||              ||
+    ||   (sombra)   ||
+    ||              ||
+    ==================
+         /    \\
+        /      \\
+       suelo fresco
+        `,
+                pasos: [
+                    "Usar cualquier material como toldo (manta, ropa, plastico)",
+                    "Elevar 30-60 cm del suelo para circulacion aire",
+                    "Doble capa con espacio de aire si es posible",
+                    "Excavar 15-20 cm para alcanzar suelo mas fresco"
+                ],
+                materiales: ["Material de cobertura", "Palos/rocas soporte", "Cuerda si disponible"],
+                warnings: ["Nunca tumbarse en arena caliente", "Suelo excavado 20°C mas fresco", "Moverse con el sol si es necesario"]
+            },
+            "montana-viento-normal": {
+                name: "Muro Cortavientos + Cueva",
+                icon: "🪨",
+                tiempo: "2-3 horas",
+                proteccion: "Alta",
+                dificultad: "Media",
+                duracion: "Varios dias",
+                ascii: `
+    Viento →→→
+              _____
+             |     |
+    ═════════╗     │
+             ║ TU  │  ← Roca/cueva
+    ═════════╝     │
+             |_____|
+    Muro piedras
+        `,
+                pasos: [
+                    "Localizar formacion rocosa o cueva natural",
+                    "Verificar seguridad (no desprendimientos)",
+                    "Construir muro semicircular de piedras",
+                    "Altura 1-1.5m, en forma de C hacia el viento",
+                    "Techar con ramas si llueve"
+                ],
+                materiales: ["Piedras (muchas)", "Ramas para techo", "Material aislante suelo"],
+                warnings: ["Verificar estabilidad rocas superiores", "No acampar bajo cornisas", "Fuego refleja calor contra roca"]
+            }
+        };
+
+        // Default combinations
+        const defaultShelter = {
+            name: "Refugio Improvisado Basico",
+            icon: "🏕️",
+            tiempo: "Variable",
+            proteccion: "Variable",
+            dificultad: "Variable",
+            duracion: "1 noche",
+            ascii: `
+    Adaptar al entorno disponible
+    `,
+            pasos: [
+                "Evaluar materiales disponibles en el entorno",
+                "Priorizar proteccion contra amenaza principal",
+                "Construir estructura minima viable",
+                "Mejorar progresivamente si hay tiempo"
+            ],
+            materiales: ["Lo que haya disponible"],
+            warnings: ["Siempre: techo sobre cabeza primero", "Aislamiento del suelo critico", "Pequeno = calido"]
+        };
+
+        function select(category, value) {
+            selections[category] = value;
+
+            // Update UI
+            document.querySelectorAll(`#${category} .option-card`).forEach(card => {
+                card.classList.remove('selected');
+            });
+            event.currentTarget.classList.add('selected');
+
+            // Check if all selected
+            if (selections.entorno && selections.clima && selections.tiempo) {
+                showResult();
+            }
+        }
+
+        function showResult() {
+            const key = `${selections.entorno}-${selections.clima}-${selections.tiempo}`;
+            const shelter = shelters[key] || shelters[`${selections.entorno}-${selections.clima}-normal`] || defaultShelter;
+
+            const resultPanel = document.getElementById('result');
+            resultPanel.classList.add('show');
+
+            resultPanel.innerHTML = `
+                <div class="shelter-result">
+                    <div class="shelter-visual">
+                        <div class="shelter-icon">${shelter.icon}</div>
+                        <div class="shelter-name">${shelter.name}</div>
+                        <div class="ascii-art">${shelter.ascii}</div>
+                        <div class="shelter-stats">
+                            <div class="stat">
+                                <div class="stat-label">Tiempo</div>
+                                <div class="stat-value">${shelter.tiempo}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Proteccion</div>
+                                <div class="stat-value">${shelter.proteccion}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Dificultad</div>
+                                <div class="stat-value">${shelter.dificultad}</div>
+                            </div>
+                            <div class="stat">
+                                <div class="stat-label">Duracion</div>
+                                <div class="stat-value">${shelter.duracion}</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="shelter-details">
+                        <h3>Pasos de Construccion</h3>
+                        <div class="construction-steps">
+                            ${shelter.pasos.map((paso, i) => `
+                                <div class="step">
+                                    <div class="step-num">${i + 1}</div>
+                                    <div>${paso}</div>
+                                </div>
+                            `).join('')}
+                        </div>
+
+                        <h3>Materiales Necesarios</h3>
+                        <div class="materials-list">
+                            ${shelter.materiales.map(m => `<div class="material">${m}</div>`).join('')}
+                        </div>
+
+                        <div class="warning-box">
+                            <h4>⚠️ Puntos Criticos</h4>
+                            <ul>
+                                ${shelter.warnings.map(w => `<li>${w}</li>`).join('')}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+                <button class="reset-btn" onclick="reset()">Probar Otra Combinacion</button>
+            `;
+        }
+
+        function reset() {
+            selections.entorno = null;
+            selections.clima = null;
+            selections.tiempo = null;
+
+            document.querySelectorAll('.option-card').forEach(card => {
+                card.classList.remove('selected');
+            });
+
+            document.getElementById('result').classList.remove('show');
+        }
+    </script>
+</body>
+</html>

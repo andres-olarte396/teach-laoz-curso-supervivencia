@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Calculadora de Agua - Curso Supervivencia</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0a3d62 0%, #1e5f74 100%);
+            min-height: 100vh;
+            color: #eee;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #74b9ff;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #aaa;
+            margin-bottom: 30px;
+        }
+        .calculator-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+        }
+        @media (max-width: 700px) {
+            .calculator-grid { grid-template-columns: 1fr; }
+        }
+        .panel {
+            background: rgba(255,255,255,0.1);
+            border-radius: 15px;
+            padding: 25px;
+        }
+        .panel-title {
+            color: #74b9ff;
+            font-size: 1.2em;
+            margin-bottom: 20px;
+            border-bottom: 1px solid rgba(255,255,255,0.2);
+            padding-bottom: 10px;
+        }
+        .input-group {
+            margin-bottom: 20px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #ccc;
+        }
+        .input-group input, .input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid rgba(116,185,255,0.3);
+            border-radius: 8px;
+            background: rgba(0,0,0,0.3);
+            color: #fff;
+            font-size: 1em;
+        }
+        .input-group input:focus, .input-group select:focus {
+            outline: none;
+            border-color: #74b9ff;
+        }
+        .slider-container {
+            margin-bottom: 20px;
+        }
+        .slider-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        input[type="range"] {
+            width: 100%;
+            height: 8px;
+            border-radius: 4px;
+            background: rgba(255,255,255,0.2);
+            appearance: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #74b9ff;
+            cursor: pointer;
+        }
+        .result-box {
+            background: rgba(116,185,255,0.2);
+            border: 2px solid #74b9ff;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .result-title {
+            font-size: 0.9em;
+            color: #aaa;
+            margin-bottom: 5px;
+        }
+        .result-value {
+            font-size: 2em;
+            color: #74b9ff;
+            font-weight: bold;
+        }
+        .result-unit {
+            font-size: 0.9em;
+            color: #888;
+        }
+        .warning {
+            background: rgba(255,193,7,0.2);
+            border: 1px solid #ffc107;
+            border-radius: 8px;
+            padding: 15px;
+            margin-top: 15px;
+            font-size: 0.9em;
+        }
+        .danger {
+            background: rgba(244,67,54,0.2);
+            border: 1px solid #f44336;
+        }
+        .success {
+            background: rgba(76,175,80,0.2);
+            border: 1px solid #4caf50;
+        }
+        .purification-methods {
+            margin-top: 20px;
+        }
+        .method {
+            background: rgba(0,0,0,0.2);
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+        }
+        .method-name {
+            color: #74b9ff;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+        .method-details {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            font-size: 0.85em;
+        }
+        .method-stat {
+            text-align: center;
+        }
+        .method-stat-label {
+            color: #888;
+            font-size: 0.8em;
+        }
+        .water-icon {
+            font-size: 3em;
+            text-align: center;
+            margin-bottom: 15px;
+        }
+        .tips {
+            background: rgba(0,0,0,0.3);
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+        .tips h3 {
+            color: #74b9ff;
+            margin-bottom: 15px;
+        }
+        .tips ul {
+            list-style: none;
+        }
+        .tips li {
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+        .tips li:before {
+            content: "💧 ";
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Calculadora de Necesidades de Agua</h1>
+        <p class="subtitle">Calcula tus necesidades hidricas y metodos de purificacion</p>
+
+        <div class="calculator-grid">
+            <div class="panel">
+                <h2 class="panel-title">Parametros de Supervivencia</h2>
+
+                <div class="input-group">
+                    <label>Numero de personas</label>
+                    <input type="number" id="personas" value="1" min="1" max="20" onchange="calcular()">
+                </div>
+
+                <div class="input-group">
+                    <label>Dias de autonomia necesarios</label>
+                    <input type="number" id="dias" value="3" min="1" max="30" onchange="calcular()">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Temperatura ambiente</span>
+                        <span id="tempValue">25°C</span>
+                    </div>
+                    <input type="range" id="temperatura" min="0" max="45" value="25" onchange="calcular()">
+                </div>
+
+                <div class="slider-container">
+                    <div class="slider-label">
+                        <span>Nivel de actividad</span>
+                        <span id="actValue">Moderada</span>
+                    </div>
+                    <input type="range" id="actividad" min="1" max="3" value="2" onchange="calcular()">
+                </div>
+
+                <div class="input-group">
+                    <label>Fuente de agua disponible</label>
+                    <select id="fuente" onchange="calcular()">
+                        <option value="ninguna">Sin acceso a agua</option>
+                        <option value="rio">Rio/Arroyo</option>
+                        <option value="lago">Lago/Estanque</option>
+                        <option value="lluvia">Agua de lluvia</option>
+                        <option value="nieve">Nieve</option>
+                        <option value="charco">Charco estancado</option>
+                    </select>
+                </div>
+
+                <div class="result-box">
+                    <div class="result-title">Agua total necesaria</div>
+                    <div class="result-value" id="totalAgua">9</div>
+                    <div class="result-unit">litros</div>
+                </div>
+
+                <div id="alertBox" class="warning"></div>
+            </div>
+
+            <div class="panel">
+                <div class="water-icon">🚰</div>
+                <h2 class="panel-title">Metodos de Purificacion</h2>
+
+                <div id="methodsContainer" class="purification-methods"></div>
+            </div>
+        </div>
+
+        <div class="tips">
+            <h3>Regla de los Tres - Agua</h3>
+            <ul>
+                <li>Puedes sobrevivir 3 dias sin agua (menos en calor extremo)</li>
+                <li>La deshidratacion reduce capacidad cognitiva al 25%</li>
+                <li>Orina oscura = deshidratacion. Orina clara = bien hidratado</li>
+                <li>NUNCA bebas agua de mar, orina o alcohol para hidratarte</li>
+                <li>Minimo absoluto: 1L/dia en reposo y sombra</li>
+                <li>En actividad intensa o calor: hasta 1L por hora</li>
+            </ul>
+        </div>
+    </div>
+
+    <script>
+        const methods = {
+            rio: [
+                { name: "Hervido", time: "5-10 min", eficacia: "99.9%", equipo: "Recipiente + fuego", nota: "Metodo mas seguro. Hervir 1 min (3 min en altura)." },
+                { name: "Filtro comercial", time: "Instantaneo", eficacia: "99.9%", equipo: "LifeStraw/Sawyer", nota: "Excelente opcion. Filtran bacterias y protozoos." },
+                { name: "Pastillas potabilizadoras", time: "30 min", eficacia: "99%", equipo: "Pastillas yodo/cloro", nota: "Ligeras y eficaces. Mal sabor pero seguras." }
+            ],
+            lago: [
+                { name: "Hervido", time: "5-10 min", eficacia: "99.9%", equipo: "Recipiente + fuego", nota: "Obligatorio en lagos. Mayor riesgo de parasitos." },
+                { name: "Filtro + UV", time: "5 min", eficacia: "99.99%", equipo: "Filtro + SteriPEN", nota: "Doble tratamiento recomendado para agua estancada." },
+                { name: "SODIS", time: "6-48 horas", eficacia: "95%", equipo: "Botella PET transparente", nota: "Exponer al sol. Funciona pero es lento." }
+            ],
+            lluvia: [
+                { name: "Consumo directo", time: "Inmediato", eficacia: "99%", equipo: "Recipiente limpio", nota: "Agua de lluvia es generalmente segura si se recoge bien." },
+                { name: "Filtrado basico", time: "5 min", eficacia: "99.5%", equipo: "Tela limpia", nota: "Filtrar particulas si cae de techo/hojas." }
+            ],
+            nieve: [
+                { name: "Derretir + hervir", time: "15-20 min", eficacia: "99.9%", equipo: "Recipiente + fuego", nota: "NUNCA comer nieve directamente (hipotermia). Derretir primero." },
+                { name: "Derretir con calor corporal", time: "Variable", eficacia: "95%", equipo: "Botella junto al cuerpo", nota: "Emergencia: botella con nieve bajo la ropa." }
+            ],
+            charco: [
+                { name: "Hervido prolongado", time: "10+ min", eficacia: "99%", equipo: "Recipiente + fuego", nota: "Alto riesgo. Hervir minimo 10 minutos." },
+                { name: "Destilacion solar", time: "Horas", eficacia: "99.9%", equipo: "Plastico + recipientes", nota: "Mejor opcion para agua muy contaminada." },
+                { name: "Triple tratamiento", time: "1 hora", eficacia: "99.9%", equipo: "Filtro + hervir + quimico", nota: "Filtrar, hervir, Y usar pastillas si es posible." }
+            ],
+            ninguna: [
+                { name: "Destilador solar", time: "4-8 horas", eficacia: "Variable", equipo: "Plastico + hoyo + recipiente", nota: "Produce 0.5-1L/dia. Requiere humedad del suelo." },
+                { name: "Rocio matinal", time: "Amanecer", eficacia: "100%", equipo: "Tela absorbente", nota: "Arrastrar tela por hierba. Pocas cantidades." },
+                { name: "Plantas (transpiracion)", time: "Horas", eficacia: "100%", equipo: "Bolsa plastica", nota: "Bolsa sobre rama con hojas. Muy poco volumen." }
+            ]
+        };
+
+        function calcular() {
+            const personas = parseInt(document.getElementById('personas').value) || 1;
+            const dias = parseInt(document.getElementById('dias').value) || 1;
+            const temp = parseInt(document.getElementById('temperatura').value);
+            const act = parseInt(document.getElementById('actividad').value);
+            const fuente = document.getElementById('fuente').value;
+
+            // Update displays
+            document.getElementById('tempValue').textContent = temp + '°C';
+            const actLabels = ['Reposo', 'Moderada', 'Intensa'];
+            document.getElementById('actValue').textContent = actLabels[act - 1];
+
+            // Base: 2L por persona por dia
+            let litrosDia = 2;
+
+            // Ajuste por temperatura
+            if (temp > 30) litrosDia += 1;
+            if (temp > 35) litrosDia += 1;
+            if (temp > 40) litrosDia += 2;
+            if (temp < 5) litrosDia -= 0.5; // Menos sudor, pero cuidado con deshidratacion
+
+            // Ajuste por actividad
+            if (act === 2) litrosDia += 0.5;
+            if (act === 3) litrosDia += 1.5;
+
+            const total = Math.round(litrosDia * personas * dias * 10) / 10;
+            document.getElementById('totalAgua').textContent = total;
+
+            // Alert box
+            const alertBox = document.getElementById('alertBox');
+            if (fuente === 'ninguna') {
+                alertBox.className = 'warning danger';
+                alertBox.innerHTML = `<strong>⚠️ CRITICO:</strong> Sin acceso a agua, prioridad maxima es encontrar fuente. En ${temp}°C con actividad ${actLabels[act-1].toLowerCase()}, supervivencia estimada: ${temp > 35 ? '24-48 horas' : '48-72 horas'}.`;
+            } else if (fuente === 'charco') {
+                alertBox.className = 'warning';
+                alertBox.innerHTML = `<strong>⚠️ Precaucion:</strong> Agua estancada tiene alto riesgo de contaminacion. Usar multiples metodos de purificacion.`;
+            } else {
+                alertBox.className = 'warning success';
+                alertBox.innerHTML = `<strong>✓ Bien:</strong> Con acceso a ${fuente}, puedes cubrir ${total}L con purificacion adecuada. Prioriza hervido o filtrado.`;
+            }
+
+            // Methods
+            const methodsContainer = document.getElementById('methodsContainer');
+            const selectedMethods = methods[fuente] || methods.ninguna;
+
+            methodsContainer.innerHTML = selectedMethods.map(m => `
+                <div class="method">
+                    <div class="method-name">${m.name}</div>
+                    <div class="method-details">
+                        <div class="method-stat">
+                            <div class="method-stat-label">Tiempo</div>
+                            <div>${m.time}</div>
+                        </div>
+                        <div class="method-stat">
+                            <div class="method-stat-label">Eficacia</div>
+                            <div>${m.eficacia}</div>
+                        </div>
+                        <div class="method-stat">
+                            <div class="method-stat-label">Requiere</div>
+                            <div>${m.equipo}</div>
+                        </div>
+                    </div>
+                    <p style="margin-top: 10px; font-size: 0.85em; color: #aaa;">${m.nota}</p>
+                </div>
+            `).join('');
+        }
+
+        // Initial calculation
+        calcular();
+    </script>
+</body>
+</html>
